@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eyesight & Posture Monitor</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .main-content {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .video-section, .info-section, .history-section {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        
+        .video-container {
+            position: relative;
+            width: 100%;
+            border-radius: 10px;
+            overflow: hidden;
+            background: #000;
+        }
+        
+        #video-feed {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+        
+        .measurements {
+            margin-top: 20px;
+        }
+        
+        .measurement-card {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .measurement-card h3 {
+            color: #333;
+            margin-bottom: 8px;
+            font-size: 1.1em;
+        }
+        
+        .measurement-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+        
+        .status-optimal {
+            background: #28a745;
+            color: white;
+        }
+        
+        .status-warning {
+            background: #ffc107;
+            color: #333;
+        }
+        
+        .status-danger {
+            background: #dc3545;
+            color: white;
+        }
+        
+        .recommendations {
+            background: #e3f2fd;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+            border-left: 4px solid #2196f3;
+        }
+        
+        .recommendations h3 {
+            color: #1976d2;
+            margin-bottom: 15px;
+        }
+        
+        .recommendations ul {
+            list-style-position: inside;
+            color: #333;
+            line-height: 1.8;
+        }
+        
+        .recommendations li {
+            margin-bottom: 8px;
+        }
+        
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-right: 10px;
+            margin-top: 10px;
+        }
+        
+        button:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        .history-section {
+            grid-column: 1 / -1;
+        }
+        
+        .history-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        
+        .history-table th {
+            background: #667eea;
+            color: white;
+            padding: 12px;
+            text-align: left;
+        }
+        
+        .history-table td {
+            padding: 10px 12px;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .history-table tr:hover {
+            background: #f8f9fa;
+        }
+        
+        .calibration-section {
+            background: #fff3cd;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 15px;
+            border-left: 4px solid #ffc107;
+        }
+        
+        .calibration-section input {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin-right: 10px;
+            width: 100px;
+        }
+        
+        @media (max-width: 968px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>👁️ Eyesight & Posture Monitor</h1>
+        
+        <div class="main-content">
+            <div class="video-section">
+                <h2>Live Camera Feed</h2>
+                <div class="video-container">
+                    <img id="video-feed" src="{{ url_for('video_feed') }}" alt="Video Feed">
+                </div>
+                
+                <div class="calibration-section">
+                    <h3>🎯 Calibration</h3>
+                    <p>Sit at your desired distance (50-70cm recommended) and click calibrate:</p>
+                    <input type="number" id="calibration-distance" value="60" min="30" max="100">
+                    <span>cm</span>
+                    <button onclick="calibrate()">Calibrate Distance</button>
+                </div>
+            </div>
+            
+            <div class="info-section">
+                <h2>Current Measurements</h2>
+                
+                <div class="measurements">
+                    <div class="measurement-card">
+                        <h3>Distance from Screen</h3>
+                        <div class="measurement-value" id="distance-value">--</div>
+                        <span>centimeters</span>
+                    </div>
+                    
+                    <div class="measurement-card">
+                        <h3>Eye Distance</h3>
+                        <div class="measurement-value" id="eye-distance-value">--</div>
+                        <span>pixels</span>
+                    </div>
+                    
+                    <div class="measurement-card">
+                        <h3>Posture Status</h3>
+                        <span class="status-indicator" id="status-indicator">Detecting...</span>
+                    </div>
+                </div>
+                
+                <button onclick="saveMeasurement()">💾 Save Measurement</button>
+                
+                <div class="recommendations" id="recommendations">
+                    <h3>💡 Recommendations</h3>
+                    <ul id="recommendations-list">
+                        <li>Position yourself 50-70cm from the screen</li>
+                        <li>Keep your eyes level with the top of the screen</li>
+                        <li>Take breaks every 20 minutes</li>
+                        <li>Follow the 20-20-20 rule</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <div class="history-section">
+            <h2>📊 Measurement History</h2>
+            <button onclick="loadHistory()">🔄 Refresh History</button>
+            <table class="history-table">
+                <thead>
+                    <tr>
+                        <th>Timestamp</th>
+                        <th>Distance (cm)</th>
+                        <th>Eye Distance (px)</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="history-body">
+                    <tr>
+                        <td colspan="4" style="text-align: center;">No data yet. Save some measurements!</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <script>
+        // Check camera status on load
+        window.addEventListener('load', function() {
+            checkCameraStatus();
+        });
+        
+        function checkCameraStatus() {
+            fetch('/camera_status')
+                .then(response => response.json())
+                .then(data => {
+                    if (!data.is_opened) {
+                        alert('⚠️ Camera not available!\n\nPlease check:\n1. Camera is connected\n2. No other app is using it\n3. Browser has camera permissions\n\nRefresh the page after fixing.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error checking camera:', error);
+                });
+        }
+        
+        // Update measurements every 500ms
+        setInterval(updateMeasurements, 500);
+        
+        function updateMeasurements() {
+            fetch('/get_measurements')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('distance-value').textContent = 
+                        data.distance > 0 ? data.distance.toFixed(1) : '--';
+                    document.getElementById('eye-distance-value').textContent = 
+                        data.eye_distance > 0 ? data.eye_distance : '--';
+                    
+                    const statusEl = document.getElementById('status-indicator');
+                    statusEl.textContent = data.posture_status;
+                    
+                    // Update status color
+                    statusEl.className = 'status-indicator';
+                    if (data.posture_status === 'Optimal') {
+                        statusEl.classList.add('status-optimal');
+                    } else if (data.posture_status === 'No face detected') {
+                        statusEl.classList.add('status-warning');
+                    } else {
+                        statusEl.classList.add('status-danger');
+                    }
+                    
+                    // Update recommendations
+                    updateRecommendations(data);
+                });
+        }
+        
+        function updateRecommendations(data) {
+            const recList = document.getElementById('recommendations-list');
+            let recommendations = [];
+            
+            if (data.posture_status === 'Too close') {
+                recommendations.push('⚠️ Move back! You are too close to the screen.');
+                recommendations.push('Optimal distance is 50-70cm from the screen.');
+                recommendations.push('Being too close can cause eye strain and fatigue.');
+            } else if (data.posture_status === 'Too far') {
+                recommendations.push('⚠️ Move closer! You are too far from the screen.');
+                recommendations.push('You may be straining to see clearly.');
+                recommendations.push('Optimal distance is 50-70cm from the screen.');
+            } else if (data.posture_status === 'Optimal') {
+                recommendations.push('✅ Perfect! Your distance is optimal.');
+                recommendations.push('Remember to blink regularly to avoid dry eyes.');
+                recommendations.push('Take a 20-second break every 20 minutes.');
+                recommendations.push('Look at something 20 feet away (20-20-20 rule).');
+            } else {
+                recommendations.push('Position yourself in front of the camera.');
+                recommendations.push('Ensure good lighting for face detection.');
+                recommendations.push('Optimal distance is 50-70cm from the screen.');
+            }
+            
+            recList.innerHTML = recommendations.map(r => `<li>${r}</li>`).join('');
+        }
+        
+        function saveMeasurement() {
+            fetch('/get_measurements')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.distance > 0) {
+                        fetch('/save_measurement', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify(data)
+                        })
+                        .then(response => response.json())
+                        .then(result => {
+                            alert('Measurement saved successfully!');
+                            loadHistory();
+                        });
+                    } else {
+                        alert('No valid measurement to save. Please ensure your face is detected.');
+                    }
+                });
+        }
+        
+        function loadHistory() {
+            fetch('/get_history')
+                .then(response => response.json())
+                .then(data => {
+                    const tbody = document.getElementById('history-body');
+                    
+                    if (data.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="4" style="text-align: center;">No data yet. Save some measurements!</td></tr>';
+                        return;
+                    }
+                    
+                    tbody.innerHTML = data.map(row => {
+                        const date = new Date(row.timestamp);
+                        const statusClass = row.posture_status === 'Optimal' ? 'status-optimal' : 
+                                          row.posture_status === 'No face detected' ? 'status-warning' : 
+                                          'status-danger';
+                        
+                        return `
+                            <tr>
+                                <td>${date.toLocaleString()}</td>
+                                <td>${row.distance.toFixed(1)}</td>
+                                <td>${row.eye_distance}</td>
+                                <td><span class="status-indicator ${statusClass}">${row.posture_status}</span></td>
+                            </tr>
+                        `;
+                    }).join('');
+                });
+        }
+        
+        function calibrate() {
+            const distance = document.getElementById('calibration-distance').value;
+            
+            fetch('/calibrate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ distance: parseFloat(distance) })
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.status === 'success') {
+                    alert('Calibration successful! Distance measurement is now calibrated to ' + distance + 'cm.');
+                } else {
+                    alert('Calibration failed: ' + result.message);
+                }
+            });
+        }
+        
+        // Load history on page load
+        loadHistory();
+    </script>
+</body>
+</html>
